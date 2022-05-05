@@ -176,7 +176,7 @@ def get_hotel_score_deviation(df: DataFrame, hotel_id: str):
     return np.std(all_review_scores_from_hotel_id)
 
 
-def get_max_review_on_one_day(df: DataFrame, hotel_id: str):
+def get_max_review_percentage_on_one_day(df: DataFrame, hotel_id: str):
     """
     Calculate the maximum number of ratings in percent on one day
 
@@ -190,26 +190,77 @@ def get_max_review_on_one_day(df: DataFrame, hotel_id: str):
     return max_review_on_one_day / number_of_reviews
 
 
-def get_number_good_rating_on_one_day(df: DataFrame):
-    df = df.groupby(['hotel_id', 'ur_review_date'])
-    return df.loc[df['review_score'] >= 4].size().max()
+def get_number_good_rating_on_one_day(df: DataFrame, hotel_id: str):
+    """
+    Calculate the maximum number of good ratings in one day in percent
+
+    :param df: DataFrane
+    :param hotel_id: str
+    :return: maximum number of good ratings in one day in percent: float
+    """
+    number_of_reviews = float(df['hotel_number_of_reviews'].values[0])
+    df = df.loc[(df['hotel_id'] == hotel_id) & (df['review_score'] >= 4)]
+    max_good_review_on_one_day = df.groupby(['review_date']).size().max()
+    percentage = max_good_review_on_one_day / number_of_reviews
+    if np.isnan(percentage):
+        return 0
+
+    return percentage
 
 
-def check_distortion(df: DataFrame):
-    df = df.groupby(['hr_hotel_id'])
-    df = df.drop(df.sample(frac=0.8).index)
-    return
+def get_number_bad_rating_on_one_day(df: DataFrame, hotel_id: str):
+    """
+    Calculate the maximum number of bad ratings in one day in percent
+
+    :param df: DataFrane
+    :param hotel_id: str
+    :return: maximum number of bad ratings in one day in percent: float
+    """
+    number_of_reviews = float(df['hotel_number_of_reviews'].values[0])
+    df = df.loc[(df['hotel_id'] == hotel_id) & (df['review_score'] <= 2)]
+    max_bad_review_on_one_day = df.groupby(['review_date']).size().max()
+    percentage = max_bad_review_on_one_day / number_of_reviews
+    if np.isnan(percentage):
+        return 0
+
+    return percentage
+
+
+def get_hotel_score_distortion(df: DataFrame, hotel_id: str):
+    """
+    Calculate the difference between hotel score and calculated hotel score of a random subset
+
+    :param df: DataFrame
+    :param hotel_id: str
+    :return: The absolute distortion: float
+    """
+    hotel_score = df.loc[df['hotel_id'] == hotel_id]['hotel_score'].values[0]
+    df = df.loc[df['hotel_id'] == hotel_id]['review_score']
+    review_scores = df.drop(df.sample(frac=0.2).index)
+    # return abs(hotel_score - np.mean(review_scores))
 
 
 def db_insert_hotel(df):
     # df = df.reset_index()  # Not sure if it's needed
+    id = None
     for index, row in df.iterrows():
         hotel_id = row['hotel_id']
-        score = row['hotel_score']
-        number_of_reviews = row['hotel_number_of_reviews']
-        deviation = get_hotel_score_deviation(df, hotel_id)  # Change
-        max_review_one_day = get_max_review_on_one_day(df, hotel_id)
-        print(hotel_id, score, number_of_reviews, deviation, max_review_one_day)
+        if id is not hotel_id:
+            id = hotel_id
+            hotel_id = hotel_id
+            score = row['hotel_score']
+            number_of_reviews = row['hotel_number_of_reviews']
+            deviation = get_hotel_score_deviation(df, hotel_id)
+            max_review_one_day = get_max_review_percentage_on_one_day(df, hotel_id)
+            distortion = get_hotel_score_distortion(df, hotel_id)
+            good_rating_one_day = get_number_good_rating_on_one_day(df, hotel_id)
+            bad_rating_one_day = get_number_bad_rating_on_one_day(df, hotel_id)
+
+            print(hotel_id, score, number_of_reviews, deviation, max_review_one_day, distortion, good_rating_one_day, bad_rating_one_day)
+            # TODO: insert into DB
+        else:
+            # TODO: insert into DB with values already determined
+            pass
 
 
 def main():
@@ -252,6 +303,8 @@ def main():
 
     # print(df_hotel_hotel_review)
     # print(df_user_user_review)
+    # print(df)
+    # df = df.sort_values(by=['hotel_id']) Not sure if it's needed
     # print(df)
 
     # Database
