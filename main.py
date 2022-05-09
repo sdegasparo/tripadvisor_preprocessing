@@ -1,4 +1,6 @@
 import json
+import re
+
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
@@ -28,6 +30,20 @@ def load_json(file: str):
     return data
 
 
+def get_hotel_description_by_hotel_id(df: DataFrame, hotel_id: str):
+    """
+    Return the hotel description if it's exists
+    :param df: DataFrame
+    :param hotel_id: str
+    :return: hotel_description: str or False
+    """
+    hotel_description = df.loc[df['hotel_id'] == hotel_id]['hotel_description']
+    if hotel_description.any():
+        return hotel_description.values[0]
+
+    return False
+
+
 # Review specific
 def get_number_of_characters(review: str) -> int:
     """
@@ -45,10 +61,7 @@ def get_number_of_sentences(review: str) -> int:
     :param review: str
     :return: number of sentences: int
 
-    >>> get_number_of_sentences('This my the 3 rd time in this hotel. The service is very NICE. \\
-                                They know me and know my tastes. \\
-                                I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. \\
-                                They serve you with a smile and this is so nice !')
+    >>> get_number_of_sentences('This my the 3 rd time in this hotel. The service is very NICE. They know me and know my tastes. I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. They serve you with a smile and this is so nice !')
     5
     """
     return len(sent_tokenize(review))
@@ -60,10 +73,7 @@ def get_number_of_different_token(review: str) -> int:
     :param review:
     :return:
 
-    >>> get_number_of_different_token('This my the 3 rd time in this hotel. The service is very NICE. \\
-                                They know me and know my tastes. \\
-                                I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. \\
-                                They serve you with a smile and this is so nice !')
+    >>> get_number_of_different_token('This my the 3 rd time in this hotel. The service is very NICE. They know me and know my tastes. I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. They serve you with a smile and this is so nice !')
     41
     """
     return len(set(word_tokenize(review)))
@@ -74,11 +84,8 @@ def get_percentage_of_digit(review: str) -> float:
 
     :param review: str
     :return: percentage of digits: float
-    >>> get_percentage_of_digit('This my the 3 rd time in this hotel. The service is very NICE. \\
-                                They know me and know my tastes. \\
-                                I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. \\
-                                They serve you with a smile and this is so nice !')
-    0.002777777777777778
+    >>> get_percentage_of_digit('This my the 3 rd time in this hotel. The service is very NICE. They know me and know my tastes. I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. They serve you with a smile and this is so nice !')
+    0.003787878787878788
     """
     total_characters = get_number_of_characters(review)
     digits = sum(c.isdigit() for c in review)
@@ -91,10 +98,7 @@ def get_percentage_of_uppercase_words(review: str) -> float:
     :param review: str
     :return: percentage of uppercase words: float
 
-    >>> get_percentage_of_uppercase_words('This my the 3 rd time in this hotel. The service is very NICE. \\
-                                They know me and know my tastes. \\
-                                I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. \\
-                                They serve you with a smile and this is so nice !')
+    >>> get_percentage_of_uppercase_words('This my the 3 rd time in this hotel. The service is very NICE. They know me and know my tastes. I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. They serve you with a smile and this is so nice !')
     0.05084745762711865
     """
     tokens = word_tokenize(review)
@@ -104,8 +108,16 @@ def get_percentage_of_uppercase_words(review: str) -> float:
 
 
 def get_number_of_hotel_name_mention(hotel_name: str, review: str) -> int:
-    token_frequency = FreqDist(review)
-    return token_frequency[hotel_name]
+    """
+
+    :param hotel_name: str
+    :param review: str
+    :return: number of hotel mention: int
+
+    >>> get_number_of_hotel_name_mention('Hotel Hilton', 'The Hotel Hilton is the best hotel. It was really nice at the hotel hilton.')
+    2
+    """
+    return len(re.findall(hotel_name.lower(), review.lower()))
 
 
 def get_deviation_from_rating(hotel_score: float, review_score: int) -> float:
@@ -132,26 +144,43 @@ def remove_stopwords(text: str) -> str:
 
 
 def clean_string(text: str) -> str:
-    text = ''.join([word for word in text if word not in string.punctuation])
-    text = text.lower()
-    text = ' '.join([word for word in text.split() if word not in stopwords])
-
+    exclist = string.punctuation
+    table_ = str.maketrans(exclist, ' ' * len(exclist))
+    text = ' '.join(text.translate(table_).split())
     return text
 
 
 def get_cosine_similarity(text_1: str, text_2: str) -> float:
-    text_1 = clean_string(text_1)
-    text_2 = clean_string(text_2)
+    """
 
-    data = []
-    data.append(text_1)
-    data.append(text_2)
+    :param text_1:
+    :param text_2:
+    :return:
 
-    vectorizer = CountVectorizer().fit_transform(data)
-    vectors = vectorizer.toarray()
+    >>> get_cosine_similarity('This is a Test', 'This is a Test')
+    1.0
 
-    # Just return the cosine similiarity of the two texts and not the whole matrix
-    return cosine_similarity(vectors)[0, 1]
+    >>> get_cosine_similarity('This is a Test', 'No similarity')
+    0.0
+
+    >>> get_cosine_similarity('Test', False)
+    False
+    """
+    if text_1 and text_2:
+        text_1 = clean_string(text_1)
+        text_2 = clean_string(text_2)
+
+        data = []
+        data.append(text_1)
+        data.append(text_2)
+
+        vectorizer = CountVectorizer().fit_transform(data)
+        vectors = vectorizer.toarray()
+
+        # Just return the cosine similiarity of the two texts and not the whole matrix
+        return round(cosine_similarity(vectors)[0, 1], 4)
+    else:
+        return False
 
 
 # Reviewer specific
@@ -251,6 +280,39 @@ def get_hotel_score_distortion(df: DataFrame, hotel_id: str):
     review_scores = df.drop(df.sample(frac=0.2).index)
     # return abs(hotel_score - np.mean(review_scores))
     return 0
+
+
+# Insert data to database
+def db_insert_reviews(df):
+    for index, row in df.iterrows():
+        review_id = row['review_id']
+        username_id = row['username_id']
+        hotel_id = row['hotel_id']
+        review_date = row['review_date']
+        date_of_stay = row['date_of_stay']
+        score = row['review_score']
+        title = row['review_title']
+        text = row['review_text']
+        title_length = get_number_of_characters(title)
+        text_length = get_number_of_characters(text)
+        text_sentences = get_number_of_sentences(text)
+        text_digits = get_percentage_of_digit(text)
+        text_uppercase = get_percentage_of_uppercase_words(text)
+        # TODO: Prozentsatz der positiven/negativen meinungsbildenden Wörter in jeder Rezension
+        # text_cosine_similarity = get_cosine_similarity()
+        text_different_tokens = get_number_of_different_token(text)
+        text_description_similarity = get_cosine_similarity(text, row['hotel_description'])
+        hotel_mention = get_number_of_hotel_name_mention(row['hotel_name'], text)
+        score_deviation = get_deviation_from_rating(row['hotel_score'], score)
+
+
+def db_insert_reviewer(df):
+    id = None
+    for index, row in df.iterrows():
+        reviewer_id = row['reviewer_id']
+        if id is not reviewer_id:
+            id = reviewer_id
+            # TODO Add the others
 
 
 def db_insert_hotel(df):
