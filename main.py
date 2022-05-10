@@ -1,6 +1,8 @@
 import json
 import re
 
+from transformers import pipeline
+
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
@@ -28,20 +30,6 @@ def load_json(file: str):
     f.close()
 
     return data
-
-
-def get_hotel_description_by_hotel_id(df: DataFrame, hotel_id: str):
-    """
-    Return the hotel description if it's exists
-    :param df: DataFrame
-    :param hotel_id: str
-    :return: hotel_description: str or False
-    """
-    hotel_description = df.loc[df['hotel_id'] == hotel_id]['hotel_description']
-    if hotel_description.any():
-        return hotel_description.values[0]
-
-    return False
 
 
 # Review specific
@@ -183,6 +171,14 @@ def get_cosine_similarity(text_1: str, text_2: str) -> float:
         return False
 
 
+def get_sentiment(review: str):
+    sentiment = sentiment_model(review)
+    if sentiment[0]['label'] == 'Negative':
+        return - sentiment[0]['score']
+    else:
+        return sentiment[0]['score']
+
+
 # Reviewer specific
 def get_sum_of_reviews(df: DataFrame):
     pass
@@ -298,7 +294,7 @@ def db_insert_reviews(df):
         text_sentences = get_number_of_sentences(text)
         text_digits = get_percentage_of_digit(text)
         text_uppercase = get_percentage_of_uppercase_words(text)
-        # TODO: Prozentsatz der positiven/negativen meinungsbildenden Wörter in jeder Rezension
+        text_sentiment = get_sentiment(text)
         # text_cosine_similarity = get_cosine_similarity()
         text_different_tokens = get_number_of_different_token(text)
         text_description_similarity = get_cosine_similarity(text, row['hotel_description'])
@@ -426,4 +422,8 @@ def main():
 
 if __name__ == '__main__':
     stopwords = stopwords.words('german')
+
+    sentiment_pipeline = pipeline("sentiment-analysis")
+    sentiment_model = pipeline(model="Tobias/bert-base-german-cased_German_Hotel_sentiment")
+
     main()
