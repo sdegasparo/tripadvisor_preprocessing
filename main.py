@@ -32,6 +32,26 @@ def load_json(file: str):
     return data
 
 
+def get_reviews_by_hotel_id(df: DataFrame, hotel_id: str) -> DataFrame:
+    """
+
+    :param df: DataFrame
+    :param hotel_id: str
+    :return: All reviews from this hotel: DataFrame
+    """
+    return df.loc[df['hotel_id'] == hotel_id]
+
+
+def get_reviews_by_username_id(df: DataFrame, username_id: str) -> DataFrame:
+    """
+
+    :param df: DataFrame
+    :param username_id: str
+    :return: All reviews from this user: DataFrame
+    """
+    return df.loc[df['username_id'] == username_id]
+
+
 # Review specific
 def get_number_of_characters(review: str) -> int:
     """
@@ -55,13 +75,12 @@ def get_number_of_sentences(review: str) -> int:
     return len(sent_tokenize(review))
 
 
-def get_number_of_different_token(review: str) -> int:
+def get_number_of_different_tokens(review: str) -> int:
     """
+    :param review: str
+    :return: number of different tokens
 
-    :param review:
-    :return:
-
-    >>> get_number_of_different_token('This my the 3 rd time in this hotel. The service is very NICE. They know me and know my tastes. I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. They serve you with a smile and this is so nice !')
+    >>> get_number_of_different_tokens('This my the 3 rd time in this hotel. The service is very NICE. They know me and know my tastes. I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. They serve you with a smile and this is so nice !')
     41
     """
     return len(set(word_tokenize(review)))
@@ -69,7 +88,6 @@ def get_number_of_different_token(review: str) -> int:
 
 def get_percentage_of_digit(review: str) -> float:
     """
-
     :param review: str
     :return: percentage of digits: float
     >>> get_percentage_of_digit('This my the 3 rd time in this hotel. The service is very NICE. They know me and know my tastes. I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area. They serve you with a smile and this is so nice !')
@@ -82,7 +100,6 @@ def get_percentage_of_digit(review: str) -> float:
 
 def get_percentage_of_uppercase_words(review: str) -> float:
     """
-
     :param review: str
     :return: percentage of uppercase words: float
 
@@ -97,7 +114,6 @@ def get_percentage_of_uppercase_words(review: str) -> float:
 
 def get_number_of_hotel_name_mention(hotel_name: str, review: str) -> int:
     """
-
     :param hotel_name: str
     :param review: str
     :return: number of hotel mention: int
@@ -140,10 +156,9 @@ def clean_string(text: str) -> str:
 
 def get_cosine_similarity(text_1: str, text_2: str) -> float:
     """
-
-    :param text_1:
-    :param text_2:
-    :return:
+    :param text_1: str
+    :param text_2: str
+    :return: cosine similarity: float
 
     >>> get_cosine_similarity('This is a Test', 'This is a Test')
     1.0
@@ -171,25 +186,181 @@ def get_cosine_similarity(text_1: str, text_2: str) -> float:
         return False
 
 
-def get_sentiment(review: str):
-    sentiment = sentiment_model(review)
-    if sentiment[0]['label'] == 'Negative':
-        return - sentiment[0]['score']
-    else:
-        return sentiment[0]['score']
+def get_max_cosine_similarity_hotel(df: DataFrame, hotel_id: str, review_id: str, review_text: str) -> float:
+    """
+    :param df: DataFrame
+    :param hotel_id: str
+    :param review_id: str
+    :param review_text: str
+    :return: Maximum cosine similarity score: float
+
+    >>> df_cosine = pd.DataFrame({'hotel_id': ['42', '42', '42', '42'], 'review_id': [1, 2, 3, 4], 'review_text': ['The hotel Hilton was nice', 'The hotel was nice', 'I did not liked the Hilton hotel', 'The best Hilton in Switzerland']})
+    >>> get_max_cosine_similarity_hotel(df_cosine, '42', '1', 'The hotel Hilton was nice')
+    0.8944
+    """
+    df = get_reviews_by_hotel_id(df, hotel_id)
+    max_similarity = 0
+    for index, row in df.iterrows():
+        if int(row['review_id']) == int(review_id):
+            continue
+
+        similarity = get_cosine_similarity(review_text, row['review_text'])
+        if max_similarity < similarity:
+            max_similarity = similarity
+
+    return max_similarity
+
+
+# def get_sentiment(review: str) -> float:
+#     """
+#     :param review: str
+#     :return: the sentiment of the review
+#     """
+#     sentiment = sentiment_model(review)
+#     if sentiment[0]['label'] == 'Negative':
+#         return round(- sentiment[0]['score'], 4)
+#     else:
+#         return round(sentiment[0]['score'], 4)
 
 
 # Reviewer specific
-def get_sum_of_reviews(df: DataFrame):
+def get_number_of_reviews_by_username_id(df: DataFrame, username_id: str) -> int:
+    """
+    Returns the number of all reviews
+
+    :param df: DataFrame
+    :param hotel_id: str
+    :return: sum of reviews by username: int
+    """
+    return len(get_reviews_by_username_id(df, username_id))
+
+
+def get_max_reviews_on_one_day(df: DataFrame, username_id: str) -> int:
+    """
+    :param df: DataFrame
+    :param username_id: str
+    :return: Maximum number of reviews in one day: int
+    """
+    df = get_reviews_by_username_id(df, username_id)
+    return int(df.groupby(['review_date']).size().max())
+
+
+def get_number_of_helpful_votes(df: DataFrame, username_id: str) -> int:
+    df = get_reviews_by_username_id(df, username_id)
+    return df['review_helpful_vote'].sum()
+
+
+def get_number_of_good_rating(df: DataFrame, username_id: str) -> float:
+    """
+    :param df: DataFrame
+    :param username_id: str
+    :return: percentage of good reviews by username: float
+    """
+    df = get_reviews_by_username_id(df, username_id)
+    number_of_reviews = len(df)
+    number_of_good_reviews = len(df.loc[df['review_score'] >= 4])
+    percentage = number_of_reviews / number_of_good_reviews
+    if np.isnan(percentage):
+        return 0
+
+    return percentage
+
+
+def get_number_of_bad_rating(df: DataFrame, username_id: str) -> float:
+    """
+    :param df: DataFrame
+    :param username_id: str
+    :return: percentage of bad reviews by username: float
+    """
+    df = get_reviews_by_username_id(df, username_id)
+    number_of_reviews = len(df)
+    number_of_good_reviews = len(df.loc[df['review_score'] <= 2])
+    percentage = number_of_reviews / number_of_good_reviews
+    if np.isnan(percentage):
+        return 0
+
+    return percentage
+
+
+def get_average_score(df: DataFrame, username_id: str) -> float:
+    """
+    :param df: DataFrame
+    :param username_id: str
+    :return: Average rating score of reviewer
+    """
+    df = get_reviews_by_username_id(df, username_id)
+    return df['review_score'].mean()
+
+
+def get_average_text_characters(df: DataFrame, username_id: str) -> float:
+    """
+    :param df: DataFrame
+    :param username_id: str
+    :return: Average text character of reviewer
+    """
+    df = get_reviews_by_username_id(df, username_id)
+    number_of_reviews = len(df)
+    character_sum = 0
+    for index, row in df.iterrows():
+        character_sum += get_number_of_characters(row['review_text'])
+
+    return character_sum / number_of_reviews
+
+
+def get_average_text_sentences(df: DataFrame, username_id: str) -> float:
+    """
+    :param df: DataFrame
+    :param username_id: str
+    :return: Average text sentences of reviewer
+    """
+    df = get_reviews_by_username_id(df, username_id)
+    number_of_reviews = len(df)
+    sentence_sum = 0
+    for index, row in df.iterrows():
+        sentence_sum += get_number_of_sentences(row['review_text'])
+
+    return sentence_sum / number_of_reviews
+
+
+def get_date_of_first_review(df: DataFrame):
+    # TODO review_date should be formatet as Date
     pass
 
 
-def get_sum_of_same_day_reviews():
+def get_date_of_last_review(df: DataFrame):
+    # TODO review_date should be formatet as Date
+    pass
+
+
+def get_similarity_of_reviews(df: DataFrame):
+    pass
+
+
+def get_max_cosine_similarity_reviewer(df: DataFrame):
+    """
+        :param df: DataFrame
+        :return: Maximum cosine similarity score: float
+        """
+    max_similarity = 0
+    for index_outer, row_outer in df.iterrows():
+        review_outer = row_outer['review_text']
+        for index_inner, row_inner in df.iterrows():
+            if index_outer == index_inner:
+                continue
+
+            similarity = get_cosine_similarity(review_outer, row_inner['review_text'])
+            if max_similarity < similarity:
+                max_similarity = similarity
+
+    return max_similarity
+
+
+def get_number_of_reviews_for_same_hotel():
     pass
 
 
 # Hotel specific
-def get_number_of_reviews(df: DataFrame, hotel_id: str):
+def get_number_of_reviews_by_hotel_id(df: DataFrame, hotel_id: str) -> int:
     """
     Returns the number of all reviews
 
@@ -197,7 +368,7 @@ def get_number_of_reviews(df: DataFrame, hotel_id: str):
     :param hotel_id: str
     :return: sum of reviews: int
     """
-    return len(df.loc[df['hotel_id'] == hotel_id])
+    return len(get_reviews_by_hotel_id(df, hotel_id))
 
 
 def get_hotel_score_deviation(df: DataFrame, hotel_id: str):
@@ -221,7 +392,7 @@ def get_max_review_percentage_on_one_day(df: DataFrame, hotel_id: str, number_of
     :param number_of_reviews: int
     :return: maximum number of ratings in one day in percent: float
     """
-    df = df.loc[df['hotel_id'] == hotel_id]
+    df = get_reviews_by_hotel_id(df, hotel_id)
     max_review_on_one_day = int(df.groupby(['review_date']).size().max())
     return max_review_on_one_day / number_of_reviews
 
@@ -284,8 +455,8 @@ def db_insert_reviews(df):
         review_id = row['review_id']
         username_id = row['username_id']
         hotel_id = row['hotel_id']
-        review_date = row['review_date']
-        date_of_stay = row['date_of_stay']
+        review_date = row['review_date']  # Maybe save as Date
+        date_of_stay = row['date_of_stay']  # Maybe save as Date
         score = row['review_score']
         title = row['review_title']
         text = row['review_text']
@@ -294,25 +465,40 @@ def db_insert_reviews(df):
         text_sentences = get_number_of_sentences(text)
         text_digits = get_percentage_of_digit(text)
         text_uppercase = get_percentage_of_uppercase_words(text)
-        text_sentiment = get_sentiment(text)
-        # text_cosine_similarity = get_cosine_similarity()
-        text_different_tokens = get_number_of_different_token(text)
+        # text_sentiment = get_sentiment(text)
+        text_max_cosine_similarity = get_max_cosine_similarity_hotel(df, hotel_id, review_id, text)
+        text_different_tokens = get_number_of_different_tokens(text)
         text_description_similarity = get_cosine_similarity(text, row['hotel_description'])
         hotel_mention = get_number_of_hotel_name_mention(row['hotel_name'], text)
         score_deviation = get_deviation_from_rating(row['hotel_score'], score)
 
 
 def db_insert_reviewer(df):
+    df = df.sort_values(by=['username_id'], ascending=True)
     id = None
     for index, row in df.iterrows():
-        reviewer_id = row['reviewer_id']
-        if id is not reviewer_id:
-            id = reviewer_id
+        username_id = row['username_id']
+        if id is not username_id:
+            # df = get_reviews_by_username_id(df, username_id)
+            id = username_id
+            user_location = row['user_location']
+            user_register_date = row['user_register_date']  # Maybe save as date
+            number_of_reviews = get_number_of_reviews_by_username_id(df, username_id)
+            maximum_reviews = get_max_reviews_on_one_day(df, username_id)
+            helpful_vote = get_number_of_helpful_votes(df, username_id)
+            number_of_good_reviews = get_number_of_good_rating(df, username_id)
+            number_of_bad_reviews = get_number_of_bad_rating(df, username_id)
+            average_score = get_average_score(df, username_id)
+            average_text_characters = get_average_text_characters(df, username_id)
+            average_text_sentences = get_average_text_sentences(df, username_id)
+            max_similarity = get_max_cosine_similarity_reviewer(df)
+            # deviation = Percentage of deviation between other hotel reviews
             # TODO Add the others
 
 
 def db_insert_hotel(df):
     # df = df.reset_index()  # Not sure if it's needed
+    df = df.sort_values(by=['hotel_id'], ascending=True)
     id = None
     for index, row in df.iterrows():
         hotel_id = row['hotel_id']
@@ -320,7 +506,7 @@ def db_insert_hotel(df):
             id = hotel_id
             hotel_id = hotel_id
             score = row['hotel_score']
-            number_of_reviews = get_number_of_reviews(df, hotel_id)
+            number_of_reviews = get_number_of_reviews_by_hotel_id(df, hotel_id)
             deviation = get_hotel_score_deviation(df, hotel_id)
             max_review_one_day = get_max_review_percentage_on_one_day(df, hotel_id, number_of_reviews)
             distortion = get_hotel_score_distortion(df, hotel_id)  # TODO
@@ -367,14 +553,34 @@ def main():
     df = pd.merge(df_hotel_hotel_review, df_user_user_review, left_on='hr_review_id', right_on='ur_review_id')
     df = df.drop(columns=['hr_hotel_id', 'ur_username_id', 'ur_review_id'])
     # print(df)
-    df = df.rename(columns={'h_hotel_id': 'hotel_id', 'h_hotel_name': 'hotel_name', 'h_hotel_score': 'hotel_score',
-                            'h_hotel_description': 'hotel_description',
-                            'hr_review_id': 'review_id', 'u_username_id': 'username_id',
-                            'u_user_location': 'user_location', 'u_user_register_date': 'user_register_date',
-                            'ur_review_helpful_vote': 'review_helpful_vote',
-                            'ur_review_date': 'review_date', 'ur_date_of_stay': 'date_of_stay',
-                            'ur_review_score': 'review_score', 'ur_review_title': 'review_title',
-                            'ur_review_text': 'review_text'})
+    df = df.rename(columns={
+        'h_hotel_id': 'hotel_id',
+        'h_hotel_name': 'hotel_name',
+        'h_hotel_score': 'hotel_score',
+        'h_hotel_description': 'hotel_description',
+        'hr_review_id': 'review_id',
+        'u_username_id': 'username_id',
+        'u_user_location': 'user_location',
+        'u_user_register_date': 'user_register_date',
+        'ur_review_helpful_vote': 'review_helpful_vote',
+        'ur_review_date': 'review_date',
+        'ur_date_of_stay': 'date_of_stay',
+        'ur_review_score': 'review_score',
+        'ur_review_title': 'review_title',
+        'ur_review_text': 'review_text'
+    })
+
+    df_user_user_review = df_user_user_review.rename(columns={
+        'u_username_id': 'username_id',
+        'u_user_location': 'user_location',
+        'u_user_register_date': 'user_register_date',
+        'ur_review_helpful_vote': 'review_helpful_vote',
+        'ur_review_date': 'review_date',
+        'ur_date_of_stay': 'date_of_stay',
+        'ur_review_score': 'review_score',
+        'ur_review_title': 'review_title',
+        'ur_review_text': 'review_text'
+    })
 
     # print(df_hotel_hotel_review)
     # print(df_user_user_review)
@@ -384,9 +590,17 @@ def main():
     # print(df)
 
     # Database
-    db_insert_hotel(df)
+    # db_insert_hotel(df)
+    # db_insert_reviews(df_user_user_review)
+    # db_insert_reviewer(df)
 
     # TESTS
+    # df_cosine = pd.DataFrame({
+    #     'hotel_id': ['42', '42', '42', '42'],
+    #     'review_id': [1, 2, 3, 4],
+    #     'review_text': ['The hotel Hilton was nice', 'The hotel was nice', 'I did not liked the Hilton hotel', 'The best Hilton in Switzerland']
+    # })
+    # print(get_max_cosine_similarity_hotel(df_cosine, '42', '1', 'The hotel Hilton was nice'))
 
     text = """This my the 3 rd time in this hotel. The service is very NICE.
                                 They know me and know my tastes.
@@ -423,7 +637,7 @@ def main():
 if __name__ == '__main__':
     stopwords = stopwords.words('german')
 
-    sentiment_pipeline = pipeline("sentiment-analysis")
-    sentiment_model = pipeline(model="Tobias/bert-base-german-cased_German_Hotel_sentiment")
+    # sentiment_pipeline = pipeline("sentiment-analysis")
+    # sentiment_model = pipeline(model="Tobias/bert-base-german-cased_German_Hotel_sentiment")
 
     main()
