@@ -180,7 +180,7 @@ def get_deviation_from_rating(hotel_score: float, review_score: int) -> float:
     return abs(hotel_score - review_score)
 
 
-def remove_stopwords(text: str) -> str:
+def remove_stopwords(text: str) -> set:
     text = text.lower()
     tokens = word_tokenize(text)
     filtered_tokens = {token for token in tokens if not token in stopwords}
@@ -195,11 +195,11 @@ def clean_string(text: str) -> str:
     return text
 
 
-def get_cosine_similarity(text_1: str, text_2: str) -> float:
+def get_cosine_similarity(text_1: str, text_2):
     """
     :param text_1: str
     :param text_2: str
-    :return: cosine similarity: float
+    :return: cosine similarity float or bool
 
     >>> get_cosine_similarity('This is a Test', 'This is a Test')
     1.0
@@ -404,10 +404,6 @@ def get_max_cosine_similarity_reviewer(df: DataFrame):
     return max_similarity
 
 
-def get_number_of_reviews_for_same_hotel():
-    pass
-
-
 # Hotel specific
 def get_number_of_reviews_by_hotel_id(df: DataFrame, hotel_id: str) -> int:
     """
@@ -482,20 +478,22 @@ def get_number_bad_rating_on_one_day(df: DataFrame, hotel_id: str, number_of_rev
     return percentage
 
 
-# TODO
 def get_hotel_score_distortion(df: DataFrame, hotel_id: str):
     """
     Calculate the difference between hotel score and calculated hotel score of a random subset
-
     :param df: DataFrame
     :param hotel_id: str
     :return: The absolute distortion: float
     """
     hotel_score = df.loc[df['hotel_id'] == hotel_id]['hotel_score'].values[0]
-    df = df.loc[df['hotel_id'] == hotel_id]['review_score']
-    review_scores = df.drop(df.sample(frac=0.2).index)
-    # return abs(hotel_score - np.mean(review_scores))
-    return 0
+    sum_score = 0
+    experiments = 10
+    for i in range(experiments):
+        df_hotel = df.loc[df['hotel_id'] == hotel_id]['review_score']
+        review_scores = df_hotel.drop(df.sample(frac=0.2).index)
+        sum_score = abs(hotel_score - np.mean(review_scores))
+
+    return sum_score / experiments
 
 
 # Insert data to database
@@ -560,7 +558,7 @@ def db_insert_hotel(df):
             number_of_reviews = get_number_of_reviews_by_hotel_id(df, hotel_id)
             deviation = get_hotel_score_deviation(df, hotel_id)
             max_review_one_day = get_max_review_percentage_on_one_day(df, hotel_id, number_of_reviews)
-            distortion = get_hotel_score_distortion(df, hotel_id)  # TODO
+            distortion = get_hotel_score_distortion(df, hotel_id)
             good_rating_one_day = get_number_good_rating_on_one_day(df, hotel_id, number_of_reviews)
             bad_rating_one_day = get_number_bad_rating_on_one_day(df, hotel_id, number_of_reviews)
 
@@ -599,13 +597,20 @@ def main():
     df_user = pd.DataFrame(user).drop_duplicates()
     df_user_review = pd.DataFrame(user_review).drop_duplicates()
 
+    # Drop NaN
+    df_user_review = df_user_review.dropna(subset=['ur_review_id'])
+
     # Covert Date String to Dates
     for index, row in df_user.iterrows():
         row['u_user_register_date'] = month_year_to_date(row['u_user_register_date'])
 
     for index, row in df_user_review.iterrows():
         row['ur_review_date'] = day_month_year_to_date(row['ur_review_date'])
-        row['ur_date_of_stay'] = month_year_to_date(row['ur_date_of_stay'])
+
+        # Check for NaN values
+        date_of_stay = row['ur_date_of_stay']
+        if not pd.isna(date_of_stay):
+            row['ur_date_of_stay'] = month_year_to_date(date_of_stay)
 
     # Merge DataFrames to one big DataFrame
     df_hotel_hotel_review = pd.merge(df_hotel, df_hotel_review, left_on='h_hotel_id', right_on='hr_hotel_id')
@@ -642,8 +647,8 @@ def main():
         'ur_review_text': 'review_text'
     })
 
-    print(len(df_hotel))
-    print(df)
+    # print(len(df_hotel))
+    # print(df)
 
     # print(df_hotel_hotel_review)
     # print(df_user_user_review)
@@ -658,6 +663,7 @@ def main():
     # db_insert_reviewer(df)
 
     # TESTS
+
     # df_cosine = pd.DataFrame({
     #     'hotel_id': ['42', '42', '42', '42'],
     #     'review_id': [1, 2, 3, 4],
