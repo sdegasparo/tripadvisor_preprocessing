@@ -75,7 +75,6 @@ def day_month_year_to_date(date: str) -> datetime:
 
 def get_reviews_by_hotel_id(df: DataFrame, hotel_id: str) -> DataFrame:
     """
-
     :param df: DataFrame
     :param hotel_id: str
     :return: All reviews from this hotel: DataFrame
@@ -85,7 +84,6 @@ def get_reviews_by_hotel_id(df: DataFrame, hotel_id: str) -> DataFrame:
 
 def get_reviews_by_username_id(df: DataFrame, username_id: str) -> DataFrame:
     """
-
     :param df: DataFrame
     :param username_id: str
     :return: All reviews from this user: DataFrame
@@ -180,6 +178,7 @@ def get_deviation_from_rating(hotel_score: float, review_score: int) -> float:
     return abs(hotel_score - review_score)
 
 
+# TODO: Test
 def remove_stopwords(text: str) -> set:
     text = text.lower()
     tokens = word_tokenize(text)
@@ -188,6 +187,7 @@ def remove_stopwords(text: str) -> set:
     return filtered_tokens
 
 
+# TODO: Test
 def clean_string(text: str) -> str:
     exclist = string.punctuation
     table_ = str.maketrans(exclist, ' ' * len(exclist))
@@ -234,10 +234,6 @@ def get_max_cosine_similarity_hotel(df: DataFrame, hotel_id: str, review_id: str
     :param review_id: str
     :param review_text: str
     :return: Maximum cosine similarity score: float
-
-    >>> df_cosine = pd.DataFrame({'hotel_id': ['42', '42', '42', '42'], 'review_id': [1, 2, 3, 4], 'review_text': ['The hotel Hilton was nice', 'The hotel was nice', 'I did not liked the Hilton hotel', 'The best Hilton in Switzerland']})
-    >>> get_max_cosine_similarity_hotel(df_cosine, '42', '1', 'The hotel Hilton was nice')
-    0.8944
     """
     df = get_reviews_by_hotel_id(df, hotel_id)
     max_similarity = 0
@@ -267,15 +263,15 @@ def get_max_cosine_similarity_hotel(df: DataFrame, hotel_id: str, review_id: str
 # Reviewer specific
 def get_number_of_reviews_for_reviewer(df: DataFrame) -> int:
     """
-    :param df: DataFrame
-    :return: sum of reviews by username: int
+    :param df with just one username_id: DataFrame
+    :return: sum of reviews: int
     """
     return len(df)
 
 
 def get_max_reviews_on_one_day(df: DataFrame) -> int:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: Maximum number of reviews in one day: int
     """
     return int(df.groupby(['review_date']).size().max())
@@ -283,7 +279,7 @@ def get_max_reviews_on_one_day(df: DataFrame) -> int:
 
 def get_sum_of_helpful_votes(df: DataFrame) -> int:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: sum of helpful votes: int
     """
     return df['review_helpful_vote'].sum()
@@ -291,35 +287,33 @@ def get_sum_of_helpful_votes(df: DataFrame) -> int:
 
 def get_number_of_good_rating(df: DataFrame) -> float:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: percentage of good reviews by username: float
     """
     number_of_reviews = len(df)
     number_of_good_reviews = len(df.loc[df['review_score'] >= 4])
-    percentage = number_of_reviews / number_of_good_reviews
-    if np.isnan(percentage):
-        return 0
+    if number_of_good_reviews != 0:
+        return number_of_good_reviews / number_of_reviews
 
-    return percentage
+    return 0
 
 
 def get_number_of_bad_rating(df: DataFrame) -> float:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: percentage of bad reviews by username: float
     """
     number_of_reviews = len(df)
-    number_of_good_reviews = len(df.loc[df['review_score'] <= 2])
-    percentage = number_of_reviews / number_of_good_reviews
-    if np.isnan(percentage):
-        return 0
+    number_of_bad_reviews = len(df.loc[df['review_score'] <= 2])
+    if number_of_bad_reviews != 0:
+        return number_of_bad_reviews / number_of_reviews
 
-    return percentage
+    return 0
 
 
 def get_average_score(df: DataFrame) -> float:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: Average rating score of reviewer: float
     """
     return df['review_score'].mean()
@@ -327,7 +321,7 @@ def get_average_score(df: DataFrame) -> float:
 
 def get_average_text_characters(df: DataFrame) -> float:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: Average text character of reviewer
     """
     number_of_reviews = len(df)
@@ -340,7 +334,7 @@ def get_average_text_characters(df: DataFrame) -> float:
 
 def get_average_text_sentences(df: DataFrame) -> float:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: Average text sentences of reviewer
     """
     number_of_reviews = len(df)
@@ -353,7 +347,7 @@ def get_average_text_sentences(df: DataFrame) -> float:
 
 def get_date_of_first_review(df: DataFrame) -> datetime:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: date of first review: datetime
     """
     return df['review_date'].min()
@@ -361,7 +355,7 @@ def get_date_of_first_review(df: DataFrame) -> datetime:
 
 def get_date_of_last_review(df: DataFrame) -> datetime:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: date of last review: datetime
     """
     return df['review_date'].max()
@@ -369,7 +363,7 @@ def get_date_of_last_review(df: DataFrame) -> datetime:
 
 def get_max_reviews_on_same_hotel(df: DataFrame) -> int:
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: Maximum reviews on same hotel: int
     """
     df = df.sort_values(by=['hotel_id'], ascending=True)
@@ -387,7 +381,7 @@ def get_max_reviews_on_same_hotel(df: DataFrame) -> int:
 
 def get_max_cosine_similarity_reviewer(df: DataFrame):
     """
-    :param df: DataFrame
+    :param df with just one username_id: DataFrame
     :return: Maximum cosine similarity score: float
     """
     max_similarity = 0
@@ -448,16 +442,15 @@ def get_number_good_rating_on_one_day(df: DataFrame, hotel_id: str, number_of_re
 
     :param df: DataFrane
     :param hotel_id: str
-    :param number_of_reviews: int
+    :param total number_of_reviews on all days: int
     :return: maximum number of good ratings in one day in percent: float
     """
     df = df.loc[(df['hotel_id'] == hotel_id) & (df['review_score'] >= 4)]
     max_good_review_on_one_day = df.groupby(['review_date']).size().max()
-    percentage = max_good_review_on_one_day / number_of_reviews
-    if np.isnan(percentage):
+    if np.isnan(max_good_review_on_one_day):
         return 0
 
-    return percentage
+    return max_good_review_on_one_day / number_of_reviews
 
 
 def get_number_bad_rating_on_one_day(df: DataFrame, hotel_id: str, number_of_reviews: int):
@@ -466,16 +459,15 @@ def get_number_bad_rating_on_one_day(df: DataFrame, hotel_id: str, number_of_rev
 
     :param df: DataFrane
     :param hotel_id: str
-    :param number_of_reviews: int
+    :param total number_of_reviews on all days: int
     :return: maximum number of bad ratings in one day in percent: float
     """
     df = df.loc[(df['hotel_id'] == hotel_id) & (df['review_score'] <= 2)]
     max_bad_review_on_one_day = df.groupby(['review_date']).size().max()
-    percentage = max_bad_review_on_one_day / number_of_reviews
-    if np.isnan(percentage):
+    if np.isnan(max_bad_review_on_one_day):
         return 0
 
-    return percentage
+    return max_bad_review_on_one_day / number_of_reviews
 
 
 def get_hotel_score_distortion(df: DataFrame, hotel_id: str):
@@ -483,17 +475,18 @@ def get_hotel_score_distortion(df: DataFrame, hotel_id: str):
     Calculate the difference between hotel score and calculated hotel score of a random subset
     :param df: DataFrame
     :param hotel_id: str
-    :return: The absolute distortion: float
+    :return: The maximum distortion: float
     """
     hotel_score = df.loc[df['hotel_id'] == hotel_id]['hotel_score'].values[0]
-    sum_score = 0
-    experiments = 10
-    for i in range(experiments):
+    max_score = 0
+    for i in range(20):
         df_hotel = df.loc[df['hotel_id'] == hotel_id]['review_score']
         review_scores = df_hotel.drop(df.sample(frac=0.2).index)
-        sum_score = abs(hotel_score - np.mean(review_scores))
+        sample_score = abs(hotel_score - np.mean(review_scores))
+        if max_score < sample_score:
+            max_score = sample_score
 
-    return sum_score / experiments
+    return max_score
 
 
 # Insert data to database
@@ -573,7 +566,7 @@ def db_insert_hotel(df):
 def main():
     # pd.set_option('display.max_columns', None)
     # raw_data = load_json('tripadvisor_good.json')
-    raw_data = load_json('schweiz_5min.json')
+    raw_data = load_json('tripadvisor_swiss.json')
 
     hotel = []
     hotel_review = []
@@ -647,7 +640,11 @@ def main():
         'ur_review_text': 'review_text'
     })
 
-    # print(len(df_hotel))
+    print('Hotel', len(df_hotel))
+    print('Hotel Review', len(df_hotel_review))
+    print('User', len(df_user))
+    print('User Review', len(df_user_review))
+
     # print(df)
 
     # print(df_hotel_hotel_review)
