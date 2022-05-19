@@ -40,10 +40,10 @@ def month_year_to_date(date: str) -> datetime:
     :return: date: datetime
 
     >>> month_year_to_date('4.2020')
-    2020-04-01
+    datetime.date(2020, 4, 1)
 
     >>> month_year_to_date('10.2004')
-    2004-10-01
+    datetime.date(2004, 10, 1)
     """
     date_array = date.split('.')
     day = 1
@@ -60,10 +60,10 @@ def day_month_year_to_date(date: str) -> datetime:
     :return: date: datetime
 
     >>> day_month_year_to_date('26.10.2015')
-    2015-10-26
+    datetime.date(2015, 10, 26)
 
     >>> day_month_year_to_date('2.5.1999')
-    1999-05-02
+    datetime.date(1999, 5, 2)
     """
     date_array = date.split('.')
     day = int(date_array[0])
