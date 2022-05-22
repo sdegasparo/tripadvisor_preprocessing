@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import re
 import datetime
 
@@ -11,6 +12,8 @@ import numpy as np
 import string
 
 import nltk
+
+import database as db
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -248,16 +251,16 @@ def get_max_cosine_similarity_hotel(df: DataFrame, hotel_id: str, review_id: str
     return max_similarity
 
 
-# def get_sentiment(review: str) -> float:
-#     """
-#     :param review: str
-#     :return: the sentiment of the review
-#     """
-#     sentiment = sentiment_model(review)
-#     if sentiment[0]['label'] == 'Negative':
-#         return round(- sentiment[0]['score'], 4)
-#     else:
-#         return round(sentiment[0]['score'], 4)
+def get_sentiment(review: str) -> float:
+    """
+    :param review: str
+    :return: the sentiment of the review
+    """
+    sentiment = sentiment_model(review)
+    if sentiment[0]['label'] == 'Negative':
+        return round(- sentiment[0]['score'], 4)
+    else:
+        return round(sentiment[0]['score'], 4)
 
 
 # Reviewer specific
@@ -499,7 +502,7 @@ def get_hotel_score_distortion(df: DataFrame, hotel_id: str):
     max_score = 0
     for i in range(20):
         df_hotel = df.loc[df['hotel_id'] == hotel_id]['review_score']
-        review_scores = df_hotel.drop(df.sample(frac=0.2).index)
+        review_scores = df_hotel.drop(df_hotel.sample(frac=0.2).index)
         sample_score = abs(hotel_score - np.mean(review_scores))
         if max_score < sample_score:
             max_score = sample_score
@@ -508,55 +511,67 @@ def get_hotel_score_distortion(df: DataFrame, hotel_id: str):
 
 
 # Insert data to database
-def db_insert_reviews(df):
+def extract_reviews(df):
     for index, row in df.iterrows():
         review_id = row['review_id']
-        username_id = row['username_id']
         hotel_id = row['hotel_id']
-        review_date = row['review_date']
-        date_of_stay = row['date_of_stay']
         score = row['review_score']
         title = row['review_title']
         text = row['review_text']
-        title_length = get_number_of_characters(title)
-        text_length = get_number_of_characters(text)
-        text_sentences = get_number_of_sentences(text)
-        text_digits = get_percentage_of_digit(text)
-        text_uppercase = get_percentage_of_uppercase_words(text)
-        # text_sentiment = get_sentiment(text)
-        text_max_cosine_similarity = get_max_cosine_similarity_hotel(df, hotel_id, review_id, text)
-        text_different_tokens = get_number_of_different_tokens(text)
-        text_description_similarity = get_cosine_similarity(text, row['hotel_description'])
-        hotel_mention = get_number_of_hotel_name_mention(row['hotel_name'], text)
-        score_deviation = get_deviation_from_rating(row['hotel_score'], score)
+        review = {
+            'review_id': int(review_id),
+            'username_id': row['username_id'],
+            'hotel_id': int(hotel_id),
+            'review_date': row['review_date'],
+            'date_of_stay': row['date_of_stay'],
+            'score': score,
+            'title': title,
+            'text': text,
+            'title_length': get_number_of_characters(title),
+            'text_length': get_number_of_characters(text),
+            'text_sentences': get_number_of_sentences(text),
+            'text_digits': get_percentage_of_digit(text),
+            'text_uppercase': get_percentage_of_uppercase_words(text),
+            'text_sentiment': get_sentiment(text),
+            'text_max_cosine_similarity': get_max_cosine_similarity_hotel(df, hotel_id, review_id, text),
+            'text_different_tokens': get_number_of_different_tokens(text),
+            'text_description_similarity': get_cosine_similarity(text, row['hotel_description']),
+            'hotel_mention': get_number_of_hotel_name_mention(row['hotel_name'], text),
+            'score_deviation': get_deviation_from_rating(row['hotel_score'], score),
+        }
+        db.insert_review(review)
 
 
-def db_insert_reviewer(df):
+def extract_reviewer(df):
     df = df.sort_values(by=['username_id'], ascending=True)
     id = None
     for index, row in df.iterrows():
         username_id = row['username_id']
         if id is not username_id:
-            df_username = get_reviews_by_username_id(df, username_id)
             id = username_id
-            user_location = row['user_location']
-            user_register_date = row['user_register_date']
-            number_of_reviews = get_number_of_reviews_for_reviewer(df_username)
-            maximum_reviews = get_max_reviews_on_one_day(df_username)
-            helpful_vote = get_sum_of_helpful_votes(df_username)
-            number_of_good_reviews = get_number_of_good_rating(df_username)
-            number_of_bad_reviews = get_number_of_bad_rating(df_username)
-            average_score = get_average_score(df_username)
-            median_score = get_median_score_reviewer(df_username)
-            average_text_characters = get_average_text_characters(df_username)
-            average_text_sentences = get_average_text_sentences(df_username)
-            max_similarity = get_max_cosine_similarity_reviewer(df_username)
-            first_review_date = get_date_of_first_review(df_username)
-            last_review_date = get_date_of_last_review(df_username)
-            max_reviews_on_same_hotel = get_max_reviews_on_same_hotel(df_username)
+            df_username = get_reviews_by_username_id(df, username_id)
+            reviewer = {
+                'username_id': username_id,
+                'user_location': row['user_location'],
+                'user_register_date': row['user_register_date'],
+                'number_of_reviews': get_number_of_reviews_for_reviewer(df_username),
+                'maximum_reviews': get_max_reviews_on_one_day(df_username),
+                'helpful_vote': get_sum_of_helpful_votes(df_username),
+                'number_of_good_reviews': get_number_of_good_rating(df_username),
+                'number_of_bad_reviews': get_number_of_bad_rating(df_username),
+                'average_score': get_average_score(df_username),
+                'median_score': get_median_score_reviewer(df_username),
+                'average_text_characters': get_average_text_characters(df_username),
+                'average_text_sentences': get_average_text_sentences(df_username),
+                'max_similarity': get_max_cosine_similarity_reviewer(df_username),
+                'first_review_date': get_date_of_first_review(df_username),
+                'last_review_date': get_date_of_last_review(df_username),
+                'max_reviews_on_same_hotel': get_max_reviews_on_same_hotel(df_username)
+            }
+            db.insert_reviewer(reviewer)
 
 
-def db_insert_hotel(df):
+def extract_hotel(df):
     # df = df.reset_index()  # Not sure if it's needed
     df = df.sort_values(by=['hotel_id'], ascending=True)
     id = None
@@ -564,23 +579,19 @@ def db_insert_hotel(df):
         hotel_id = row['hotel_id']
         if id is not hotel_id:
             id = hotel_id
-            hotel_id = hotel_id
-            average_score = row['hotel_score']
-            median_score = get_median_of_hotel_score(df, hotel_id)
             number_of_reviews = get_number_of_reviews_by_hotel_id(df, hotel_id)
-            deviation = get_hotel_score_deviation(df, hotel_id)
-            max_review_one_day = get_max_review_percentage_on_one_day(df, hotel_id, number_of_reviews)
-            distortion = get_hotel_score_distortion(df, hotel_id)
-            good_rating_one_day = get_number_good_rating_on_one_day(df, hotel_id, number_of_reviews)
-            bad_rating_one_day = get_number_bad_rating_on_one_day(df, hotel_id, number_of_reviews)
-
-            print(hotel_id, average_score, number_of_reviews, deviation, max_review_one_day, distortion,
-                  good_rating_one_day,
-                  bad_rating_one_day)
-            # TODO: insert into DB
-        else:
-            # TODO: insert into DB with values already determined
-            pass
+            hotel = {
+                'hotel_id': int(hotel_id),
+                'average_score': row['hotel_score'],
+                'median_score': get_median_of_hotel_score(df, hotel_id),
+                'number_of_reviews': number_of_reviews,
+                'deviation': get_hotel_score_deviation(df, hotel_id),
+                'max_review_one_day': get_max_review_percentage_on_one_day(df, hotel_id, number_of_reviews),
+                'distortion': get_hotel_score_distortion(df, hotel_id),
+                'good_rating_one_day': get_number_good_rating_on_one_day(df, hotel_id, number_of_reviews),
+                'bad_rating_one_day': get_number_bad_rating_on_one_day(df, hotel_id, number_of_reviews),
+            }
+            db.insert_hotel(hotel)
 
 
 def main():
@@ -630,7 +641,6 @@ def main():
     df_user_user_review = pd.merge(df_user, df_user_review, left_on='u_username_id', right_on='ur_username_id')
     df = pd.merge(df_hotel_hotel_review, df_user_user_review, left_on='hr_review_id', right_on='ur_review_id')
     df = df.drop(columns=['hr_hotel_id', 'ur_username_id', 'ur_review_id'])
-    # print(df)
     df = df.rename(columns={
         'h_hotel_id': 'hotel_id',
         'h_hotel_name': 'hotel_name',
@@ -665,65 +675,21 @@ def main():
     print('User', len(df_user))
     print('User Review', len(df_user_review))
 
-    # print(df)
+    # Create DB Tables
+    db.create_hotels_table()
+    db.create_reviewers_table()
+    db.create_reviews_table()
 
-    # print(df_hotel_hotel_review)
-    # print(df_user_user_review)
-    # print(df_hotel)
-    # print(df)
-    # df = df.sort_values(by=['hotel_id']) Not sure if it's needed
-    # print(df)
-
-    # Database
-    # db_insert_hotel(df)
-    # db_insert_reviews(df_user_user_review)
-    # db_insert_reviewer(df)
-
-    # TESTS
-
-    # df_cosine = pd.DataFrame({
-    #     'hotel_id': ['42', '42', '42', '42'],
-    #     'review_id': [1, 2, 3, 4],
-    #     'review_text': ['The hotel Hilton was nice', 'The hotel was nice', 'I did not liked the Hilton hotel', 'The best Hilton in Switzerland']
-    # })
-    # print(get_max_cosine_similarity_hotel(df_cosine, '42', '1', 'The hotel Hilton was nice'))
-
-    text = """This my the 3 rd time in this hotel. The service is very NICE.
-                                They know me and know my tastes.
-                                I love the breakfast and Bruno are fantastic and so efficient by delivering the best breakfast I can see in this area.
-                                They serve you with a smile and this is so nice !"""
-    # print(get_number_of_characters(text))
-    # print(get_number_of_sentences(text))
-    # print(get_number_of_different_token(text))
-    # print(get_percentage_of_digit(text))
-    # print(get_percentage_of_uppercase_words(text))
-    # print(get_number_of_hotel_name_mention('I', text))
-    # print(get_deviation_from_rating(4.5, 2))
-    # print(get_deviation_from_rating(2, 5))
-    # print(remove_stopwords('Das ist ein Test'))
-    # print(get_cosine_similarity('Das ist ein komischer Test heute von Frau Dernd',
-    #                             'Was wollen wir heute machen an diesen schönen Tag?'))
-
-    # print(df_user.loc[df_user['u_username_id'] == 'Ursli2'])
-    #
-    # print(len(df_hotel.loc[df_hotel['h_hotel_id'] == '641393']))
-
-    # print(df_hotel.groupby(['h_hotel_id']).count())
-    # print(df_user.groupby(['u_username_id']).count())
-    #
-    # number_review = [{'hr_hotel_id': '1', 'ur_review_date': '5.3.2022'},
-    #                  {'hr_hotel_id': '2', 'ur_review_date': '5.3.2022'},
-    #                  {'hr_hotel_id': '1', 'ur_review_date': '5.3.2022'},
-    #                  {'hr_hotel_id': '1', 'ur_review_date': '2.3.2022'},
-    #                  {'hr_hotel_id': '2', 'ur_review_date': '3.3.2022'}]
-    # df = pd.DataFrame(number_review)
-    # print('Number Reviews', get_max_review_on_one_day(df))
+    # Extract Features
+    extract_hotel(df)
+    extract_reviewer(df)
+    extract_reviews(df_user_user_review)
 
 
 if __name__ == '__main__':
     stopwords = stopwords.words('german')
 
-    # sentiment_pipeline = pipeline("sentiment-analysis")
-    # sentiment_model = pipeline(model="Tobias/bert-base-german-cased_German_Hotel_sentiment")
+    sentiment_pipeline = pipeline("sentiment-analysis")
+    sentiment_model = pipeline(model="Tobias/bert-base-german-cased_German_Hotel_sentiment")
 
     main()

@@ -24,7 +24,7 @@ def create_reviews_table():
     with conn:
         c.execute("""CREATE TABLE IF NOT EXISTS reviews (
             review_id INTEGER PRIMARY KEY,
-            username_id INTEGER,
+            username_id TEXT,
             hotel_id INTEGER,
             review_date TEXT,
             date_of_stay TEXT,
@@ -48,7 +48,7 @@ def create_reviews_table():
 def create_reviewers_table():
     with conn:
         c.execute("""CREATE TABLE IF NOT EXISTS reviewers (
-            username_id INTEGER PRIMARY KEY,
+            username_id TEXT PRIMARY KEY,
             user_location TEXT,
             user_register_date TEXT,
             number_of_reviews INTEGER,
