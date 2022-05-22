@@ -319,6 +319,14 @@ def get_average_score(df: DataFrame) -> float:
     return df['review_score'].mean()
 
 
+def get_median_score_reviewer(df: DataFrame) -> float:
+    """
+    :param df with just one username_id: DataFrame
+    :return: Median rating score of reviewer: float
+    """
+    return df['review_score'].median()
+
+
 def get_average_text_characters(df: DataFrame) -> float:
     """
     :param df with just one username_id: DataFrame
@@ -399,6 +407,16 @@ def get_max_cosine_similarity_reviewer(df: DataFrame):
 
 
 # Hotel specific
+def get_median_of_hotel_score(df: DataFrame, hotel_id: str) -> float:
+    """
+    :param df: DataFrame
+    :param hotel_id: str
+    :return: Median of hotel score
+    """
+    all_review_scores_from_hotel_id = df.loc[df['hotel_id'] == hotel_id]['review_score']
+    return all_review_scores_from_hotel_id.median()
+
+
 def get_number_of_reviews_by_hotel_id(df: DataFrame, hotel_id: str) -> int:
     """
     Returns the number of all reviews
@@ -529,10 +547,10 @@ def db_insert_reviewer(df):
             number_of_good_reviews = get_number_of_good_rating(df_username)
             number_of_bad_reviews = get_number_of_bad_rating(df_username)
             average_score = get_average_score(df_username)
+            median_score = get_median_score_reviewer(df_username)
             average_text_characters = get_average_text_characters(df_username)
             average_text_sentences = get_average_text_sentences(df_username)
             max_similarity = get_max_cosine_similarity_reviewer(df_username)
-            # deviation = Percentage of deviation between other hotel reviews
             first_review_date = get_date_of_first_review(df_username)
             last_review_date = get_date_of_last_review(df_username)
             max_reviews_on_same_hotel = get_max_reviews_on_same_hotel(df_username)
@@ -547,7 +565,8 @@ def db_insert_hotel(df):
         if id is not hotel_id:
             id = hotel_id
             hotel_id = hotel_id
-            score = row['hotel_score']
+            average_score = row['hotel_score']
+            median_score = get_median_of_hotel_score(df, hotel_id)
             number_of_reviews = get_number_of_reviews_by_hotel_id(df, hotel_id)
             deviation = get_hotel_score_deviation(df, hotel_id)
             max_review_one_day = get_max_review_percentage_on_one_day(df, hotel_id, number_of_reviews)
@@ -555,7 +574,8 @@ def db_insert_hotel(df):
             good_rating_one_day = get_number_good_rating_on_one_day(df, hotel_id, number_of_reviews)
             bad_rating_one_day = get_number_bad_rating_on_one_day(df, hotel_id, number_of_reviews)
 
-            print(hotel_id, score, number_of_reviews, deviation, max_review_one_day, distortion, good_rating_one_day,
+            print(hotel_id, average_score, number_of_reviews, deviation, max_review_one_day, distortion,
+                  good_rating_one_day,
                   bad_rating_one_day)
             # TODO: insert into DB
         else:
@@ -566,7 +586,7 @@ def db_insert_hotel(df):
 def main():
     # pd.set_option('display.max_columns', None)
     # raw_data = load_json('tripadvisor_good.json')
-    raw_data = load_json('tripadvisor_swiss.json')
+    raw_data = load_json('tripadvisor_hotel_swiss.json')
 
     hotel = []
     hotel_review = []

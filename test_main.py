@@ -110,6 +110,13 @@ class TestMain(unittest.TestCase):
         res = main.get_average_score(df)
         self.assertEqual(res, 3.5)
 
+    def test_get_median_score_reviewer(self):
+        df = pd.DataFrame({'username_id': ['aley', 'aley', 'aley', 'aley'],
+                           'review_id': [1, 2, 3, 4],
+                           'review_score': [4, 5, 3, 2]})
+        res = main.get_median_score_reviewer(df)
+        self.assertEqual(res, 3.5)
+
     def test_get_average_text_characters(self):
         df = pd.DataFrame({'username_id': ['aley', 'aley', 'aley', 'aley'],
                            'review_id': [1, 2, 3, 4],
@@ -175,6 +182,12 @@ class TestMain(unittest.TestCase):
         self.assertAlmostEqual(res, 0.8944)
 
     # Hotel specific
+    def test_get_median_of_hotel_score(self):
+        df = pd.DataFrame({'hotel_id': ['42', '33', '32', '42', '42', '33', '42', '33'],
+                           'review_score': [3, 2, 3, 4, 5, 3, 2, 1]})
+        res = main.get_median_of_hotel_score(df, '42')
+        self.assertEqual(res, 3.5)
+
     def test_get_number_of_reviews_by_hotel_id(self):
         df = pd.DataFrame({'hotel_id': ['42', '33', '32', '42'],
                            'review_id': ['1', '2', '3', '4'],
