@@ -76,6 +76,21 @@ def day_month_year_to_date(date: str) -> datetime:
     return datetime.date(year, month, day)
 
 
+def reduce_review(review: str) -> str:
+    """
+    Reduce review to a maximum of 230 tokens for the sentimental analysis
+    :param review: str
+    :return: review with a maximum of 230 tokens
+    """
+    tokens = word_tokenize(review)
+    number_of_tokens = len(tokens)
+    if number_of_tokens >= 230:
+        tokens = tokens[:230]
+        return ' '.join(tokens)
+
+    return review
+
+
 def get_reviews_by_hotel_id(df: DataFrame, hotel_id: str) -> DataFrame:
     """
     :param df: DataFrame
@@ -213,7 +228,7 @@ def get_cosine_similarity(text_1: str, text_2):
     >>> get_cosine_similarity('Test', False)
     False
     """
-    if text_1 and text_2:
+    if isinstance(text_1, str) and isinstance(text_2, str):
         text_1 = clean_string(text_1)
         text_2 = clean_string(text_2)
 
@@ -256,6 +271,7 @@ def get_sentiment(review: str) -> float:
     :param review: str
     :return: the sentiment of the review
     """
+    review = reduce_review(review)
     sentiment = sentiment_model(review)
     if sentiment[0]['label'] == 'Negative':
         return round(- sentiment[0]['score'], 4)
@@ -623,6 +639,7 @@ def main():
 
     # Drop NaN
     df_user_review = df_user_review.dropna(subset=['ur_review_id'])
+    df_user_review = df_user_review.dropna(subset=['ur_review_text'])
 
     # Covert Date String to Dates
     for index, row in df_user.iterrows():
@@ -683,7 +700,7 @@ def main():
     # Extract Features
     extract_hotel(df)
     extract_reviewer(df)
-    extract_reviews(df_user_user_review)
+    extract_reviews(df)
 
 
 if __name__ == '__main__':

@@ -34,6 +34,40 @@ class TestMain(unittest.TestCase):
         df_res = main.get_reviews_by_username_id(df, '3')
         np.array_equal(df_res.values, df_expected.values)
 
+    def test_reduce_review(self):
+        short_review = "This is a short review"
+        res = main.reduce_review(short_review)
+        self.assertEqual(res, short_review)
+
+        long_review = """
+                Lorem ipsum dolor sit amet , consetetur sadipscing elitr , sed diam nonumy eirmod tempor invidunt
+                ut labore et dolore magna aliquyam erat , sed diam voluptua . At vero eos et accusam et justo duo
+                dolores et ea rebum . Stet clita kasd gubergren , no sea takimata sanctus est Lorem ipsum dolor
+                sit amet . Lorem ipsum dolor sit amet , consetetur sadipscing elitr , sed diam nonumy eirmod tempor
+                invidunt ut labore et dolore magna aliquyam erat , ed diam voluptua . At vero eos et accusam et
+                justo duo dolores et ea rebum . Stet clita kasd gubergren , no sea takimata sanctus est Lorem ipsum
+                dolor sit amet . Lorem ipsum dolor sit amet , consetetur sadipscing elitr , sed diam nonumy eirmod
+                tempor invidunt ut labore et dolore magna aliquyam erat , sed diam voluptua . At vero eos et accusam
+                et justo duo dolores et ea rebum . Stet clita kasd gubergren , no sea takimata sanctus est Lorem
+                ipsum dolor sit amet . Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse
+                molestie consequat , vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto
+                odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla
+                facilisi . Lorem ipsum dolor sit amet , consectetuer adipiscing elit , sed diam nonummy nibh euismod
+                tincidunt ut laoreet dolore magna aliquam erat volutpat . Ut wisi enim ad minim veniam , quis nostrud
+                exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat . Duis autem vel
+                eum iriure dolor in hendrerit in vulputate velit esse molestie consequat , vel illum dolore eu
+                feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent
+                luptatum zzril delenit augue duis dolore te feugait nulla facilisi . Nam liber tempor cum soluta
+                nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum .
+                Lorem ipsum dolor sit amet , consectetuer adipiscing elit , sed diam nonummy nibh euismod
+                tincidunt ut laoreet dolore magna aliquam erat volutpat . Ut wisi enim ad minim veniam , quis
+                nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat .
+                Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat , vel illum
+                dolore eu feugiat nulla facilisis . At vero eos et accusam et justo duo dolores et ea rebum . """
+        long_review_reduced = 'Lorem ipsum dolor sit amet , consetetur sadipscing elitr , sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat , sed diam voluptua . At vero eos et accusam et justo duo dolores et ea rebum . Stet clita kasd gubergren , no sea takimata sanctus est Lorem ipsum dolor sit amet . Lorem ipsum dolor sit amet , consetetur sadipscing elitr , sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat , ed diam voluptua . At vero eos et accusam et justo duo dolores et ea rebum . Stet clita kasd gubergren , no sea takimata sanctus est Lorem ipsum dolor sit amet . Lorem ipsum dolor sit amet , consetetur sadipscing elitr , sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat , sed diam voluptua . At vero eos et accusam et justo duo dolores et ea rebum . Stet clita kasd gubergren , no sea takimata sanctus est Lorem ipsum dolor sit amet . Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat , vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi . Lorem ipsum dolor sit amet , consectetuer adipiscing elit , sed diam nonummy nibh'
+        res = main.reduce_review(long_review)
+        self.assertEqual(res, long_review_reduced)
+
     def test_get_max_cosine_similarity_hotel(self):
         df = pd.DataFrame({'hotel_id': ['42', '42', '42', '42'],
                            'review_id': [1, 2, 3, 4],
@@ -266,7 +300,7 @@ class TestMain(unittest.TestCase):
              'review_score': [2, 5, 5, 1, 5, 3, 5, 4, 5, 2, 3, 3, 5, 1],
              'hotel_score': [3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5]})
         res = main.get_hotel_score_distortion(df, '42')
-        self.assertGreaterEqual(res, 0.4)
+        self.assertGreaterEqual(res, 0.39)
 
 
 if __name__ == '__main__':
