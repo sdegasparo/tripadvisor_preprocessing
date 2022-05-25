@@ -1,7 +1,7 @@
 import sqlite3
 
 # Change to database.db file for production
-conn = sqlite3.connect(':memory:')
+conn = sqlite3.connect('test.db')
 c = conn.cursor()
 
 
@@ -142,4 +142,14 @@ def insert_reviewer(reviewer: dict):
 
 def get_hotels():
     c.execute("SELECT * FROM hotels")
+    return c.fetchall()
+
+
+def get_reviewers():
+    c.execute("SELECT * FROM reviewers")
+    return c.fetchall()
+
+
+def get_reviews():
+    c.execute("SELECT * FROM reviews")
     return c.fetchall()
