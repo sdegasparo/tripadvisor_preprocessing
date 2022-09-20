@@ -61,10 +61,10 @@ def main():
     # Print Reviewers evaluation
     print('\n************************* Reviewers *************************')
     print('Number of reviewers:', len(reviewers))
-    print('Reviewers median reviews', get_median(reviewers, 'number_of_reviews'))
-    print('Reviewers mean reviews', get_mean(reviewers, 'number_of_reviews'))
+    print('Reviewers median reviews:', get_median(reviewers, 'number_of_reviews'))
+    print('Reviewers mean reviews:', get_mean(reviewers, 'number_of_reviews'))
     plot_distribution(reviewers, 'number_of_reviews')
-    print('Reviewers with multiple reviews on same hotel', get_number_of_reviewers_with_multiple_reviews_on_same_hotel(reviewers))
+    print('Reviewers with multiple reviews on same hotel:', get_number_of_reviewers_with_multiple_reviews_on_same_hotel(reviewers))
 
     # Print Reviews evaluation
     print('\n************************* Reviews *************************')
