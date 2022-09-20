@@ -1,5 +1,4 @@
 import json
-import sqlite3
 import re
 import datetime
 
@@ -598,6 +597,7 @@ def extract_hotel(df):
             number_of_reviews = get_number_of_reviews_by_hotel_id(df, hotel_id)
             hotel = {
                 'hotel_id': int(hotel_id),
+                'hotel_name': row['hotel_name'],
                 'average_score': row['hotel_score'],
                 'median_score': get_median_of_hotel_score(df, hotel_id),
                 'number_of_reviews': number_of_reviews,
@@ -612,8 +612,7 @@ def extract_hotel(df):
 
 def main():
     # pd.set_option('display.max_columns', None)
-    # raw_data = load_json('tripadvisor_good.json')
-    raw_data = load_json('tripadvisor_hotel_swiss.json')
+    raw_data = load_json('hotel_swiss.json')
 
     hotel = []
     hotel_review = []
@@ -632,7 +631,9 @@ def main():
             hotel.append(data)
 
     # Create DataFrames and drop any duplicates
-    df_hotel = pd.DataFrame(hotel).drop_duplicates()
+    df_hotel = pd.DataFrame(hotel)
+    df_hotel = df_hotel.sort_values(by=['h_hotel_description'])
+    df_hotel = df_hotel.drop_duplicates(subset='h_hotel_id', keep="first")
     df_hotel_review = pd.DataFrame(hotel_review).drop_duplicates()
     df_user = pd.DataFrame(user).drop_duplicates()
     df_user_review = pd.DataFrame(user_review).drop_duplicates()
