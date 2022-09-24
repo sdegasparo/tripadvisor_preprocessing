@@ -1,7 +1,7 @@
 import sqlite3
 
 # Change to database.db file for production
-conn = sqlite3.connect('hotel_swiss.db')
+conn = sqlite3.connect('hotel_murten_1.db')
 c = conn.cursor()
 
 

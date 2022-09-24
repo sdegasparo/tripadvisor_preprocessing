@@ -41,18 +41,13 @@ def month_year_to_date(date: str) -> datetime:
     :param date: str
     :return: date: datetime
 
-    >>> month_year_to_date('4.2020')
-    datetime.date(2020, 4, 1)
+    >>> print(month_year_to_date('4.2020'))
+    2020-04-15
 
-    >>> month_year_to_date('10.2004')
-    datetime.date(2004, 10, 1)
+    >>> print(month_year_to_date('10.2004'))
+    2004-10-15
     """
-    date_array = date.split('.')
-    day = 1
-    month = int(date_array[0])
-    year = int(date_array[1])
-
-    return datetime.date(year, month, day)
+    return datetime.datetime.strptime(f'15.{date}', '%d.%m.%Y').date()
 
 
 def day_month_year_to_date(date: str) -> datetime:
@@ -61,18 +56,13 @@ def day_month_year_to_date(date: str) -> datetime:
     :param date: str
     :return: date: datetime
 
-    >>> day_month_year_to_date('26.10.2015')
-    datetime.date(2015, 10, 26)
+    >>> print(day_month_year_to_date('26.10.2015'))
+    2015-10-26
 
-    >>> day_month_year_to_date('2.5.1999')
-    datetime.date(1999, 5, 2)
+    >>> print(day_month_year_to_date('2.5.1999'))
+    1999-05-02
     """
-    date_array = date.split('.')
-    day = int(date_array[0])
-    month = int(date_array[1])
-    year = int(date_array[2])
-
-    return datetime.date(year, month, day)
+    return datetime.datetime.strptime(date, '%d.%m.%Y').date()
 
 
 def reduce_review(review: str) -> str:
@@ -537,8 +527,8 @@ def extract_reviews(df):
             'review_id': int(review_id),
             'username_id': row['username_id'],
             'hotel_id': int(hotel_id),
-            'review_date': row['review_date'],
-            'date_of_stay': row['date_of_stay'],
+            'review_date': day_month_year_to_date(row['review_date']),
+            'date_of_stay': month_year_to_date(row['date_of_stay']),
             'score': score,
             'title': title,
             'text': text,
@@ -579,8 +569,8 @@ def extract_reviewer(df):
                 'average_text_characters': get_average_text_characters(df_username),
                 'average_text_sentences': get_average_text_sentences(df_username),
                 'max_similarity': get_max_cosine_similarity_reviewer(df_username),
-                'first_review_date': get_date_of_first_review(df_username),
-                'last_review_date': get_date_of_last_review(df_username),
+                'first_review_date': day_month_year_to_date(get_date_of_first_review(df_username)),
+                'last_review_date': day_month_year_to_date(get_date_of_last_review(df_username)),
                 'max_reviews_on_same_hotel': get_max_reviews_on_same_hotel(df_username)
             }
             db.insert_reviewer(reviewer)
@@ -612,7 +602,7 @@ def extract_hotel(df):
 
 def main():
     # pd.set_option('display.max_columns', None)
-    raw_data = load_json('hotel_swiss.json')
+    raw_data = load_json('hotel_murten_1.json')
 
     hotel = []
     hotel_review = []
