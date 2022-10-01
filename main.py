@@ -515,6 +515,21 @@ def get_hotel_score_distortion(df: DataFrame, hotel_id: str):
     return max_score
 
 
+def get_first_review_hotel(df: DataFrame, hotel_id: str):
+    """
+    Get the date of the first review from the given hotel
+    :param df: DataFrame
+    :param hotel_id: str
+    :return: The date of the first review:
+    """
+    df = get_reviews_by_hotel_id(df, hotel_id)
+    for index, row in df.iterrows():
+        df.at[index, 'review_date'] = day_month_year_to_date(row['review_date'])
+    df = df.sort_values(by=['review_date'])
+    print(df['review_date'])
+    return df.iloc[0]['review_date']
+
+
 # Insert data to database
 def extract_reviews(df):
     for index, row in df.iterrows():
@@ -596,6 +611,7 @@ def extract_hotel(df):
                 'distortion': get_hotel_score_distortion(df, hotel_id),
                 'good_rating_one_day': get_number_good_rating_on_one_day(df, hotel_id, number_of_reviews),
                 'bad_rating_one_day': get_number_bad_rating_on_one_day(df, hotel_id, number_of_reviews),
+                'first_review': get_first_review_hotel(df, hotel_id)
             }
             db.insert_hotel(hotel)
 

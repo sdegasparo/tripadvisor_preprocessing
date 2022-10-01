@@ -17,7 +17,8 @@ def create_hotels_table():
             max_review_one_day REAL,
             distortion REAL,
             good_rating_one_day REAL,
-            bad_rating_one_day REAL
+            bad_rating_one_day REAL,
+            first_review TEXT
         )""")
 
 
@@ -72,7 +73,7 @@ def insert_hotel(hotel: dict):
     with conn:
         c.execute(
             """INSERT INTO hotels VALUES (:hotel_id, :hotel_name, :average_score, :median_score, :number_of_reviews,
-            :deviation, :max_review_one_day, :distortion, :good_rating_one_day, :bad_rating_one_day)""",
+            :deviation, :max_review_one_day, :distortion, :good_rating_one_day, :bad_rating_one_day, :first_review)""",
             {'hotel_id': hotel['hotel_id'],
              'hotel_name': hotel['hotel_name'],
              'average_score': hotel['average_score'],
@@ -82,7 +83,8 @@ def insert_hotel(hotel: dict):
              'max_review_one_day': hotel['max_review_one_day'],
              'distortion': hotel['distortion'],
              'good_rating_one_day': hotel['good_rating_one_day'],
-             'bad_rating_one_day': hotel['bad_rating_one_day']
+             'bad_rating_one_day': hotel['bad_rating_one_day'],
+             'first_review': hotel['first_review']
              })
 
 

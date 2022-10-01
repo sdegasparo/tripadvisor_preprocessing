@@ -4,6 +4,8 @@ import main
 import pandas as pd
 import numpy as np
 
+import datetime
+
 
 class TestMain(unittest.TestCase):
     def test_get_reviews_by_hotel_id(self):
@@ -301,6 +303,14 @@ class TestMain(unittest.TestCase):
              'hotel_score': [3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5]})
         res = main.get_hotel_score_distortion(df, '42')
         self.assertGreaterEqual(res, 0.39)
+
+    def test_get_first_review_hotel(self):
+        df = pd.DataFrame(
+            {'hotel_id': ['42', '42', '42', '22', '22', '42'],
+             'review_date': ['16.4.2015', '2.4.2015', '1.1.2016', '1.1.2012', '26.12.2021', '26.10.2018'],
+             'hotel_score': [4.5, 4.5, 4.5, 4.5, 4.5, 4.5]})
+        res = main.get_first_review_hotel(df, '42')
+        self.assertEqual(res, datetime.date(2015, 4, 2))
 
 
 if __name__ == '__main__':
