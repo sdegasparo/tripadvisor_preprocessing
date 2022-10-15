@@ -648,6 +648,13 @@ def main():
     df_user_review = df_user_review.dropna(subset=['ur_review_id'])
     df_user_review = df_user_review.dropna(subset=['ur_review_text'])
 
+    # Merge hotel_description and hotel_description_2
+    for index, row in df_hotel.iterrows():
+        if pd.isna(row['h_hotel_description']):
+            df_hotel.at[index, 'h_hotel_description'] = row['h_hotel_description_2']
+
+    df_hotel = df_hotel.drop(columns=['h_hotel_description_2'])
+
     # Covert Date String to Dates
     for index, row in df_user.iterrows():
         row['u_user_register_date'] = month_year_to_date(row['u_user_register_date'])
