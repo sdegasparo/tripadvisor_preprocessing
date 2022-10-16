@@ -47,7 +47,11 @@ def month_year_to_date(date: str) -> datetime:
     >>> print(month_year_to_date('10.2004'))
     2004-10-15
     """
-    return datetime.datetime.strptime(f'15.{date}', '%d.%m.%Y').date()
+    try:
+        return datetime.datetime.strptime(f'15.{date}', '%d.%m.%Y').date()
+    except:
+        return datetime.datetime.now().date()
+
 
 
 def day_month_year_to_date(date: str) -> datetime:
@@ -73,8 +77,8 @@ def reduce_review(review: str) -> str:
     """
     tokens = word_tokenize(review)
     number_of_tokens = len(tokens)
-    if number_of_tokens >= 230:
-        tokens = tokens[:230]
+    if number_of_tokens >= 180:
+        tokens = tokens[:180]
         return ' '.join(tokens)
 
     return review
@@ -526,7 +530,6 @@ def get_first_review_hotel(df: DataFrame, hotel_id: str):
     for index, row in df.iterrows():
         df.at[index, 'review_date'] = day_month_year_to_date(row['review_date'])
     df = df.sort_values(by=['review_date'])
-    print(df['review_date'])
     return df.iloc[0]['review_date']
 
 
@@ -617,8 +620,8 @@ def extract_hotel(df):
 
 
 def main():
-    # pd.set_option('display.max_columns', None)
-    raw_data = load_json('hotel_murten_1.json')
+    #pd.set_option('display.max_columns', None)
+    raw_data = load_json('hotel_swiss_sep.json')
 
     hotel = []
     hotel_review = []
