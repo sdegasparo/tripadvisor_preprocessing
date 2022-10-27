@@ -77,8 +77,8 @@ def reduce_review(review: str) -> str:
     """
     tokens = word_tokenize(review)
     number_of_tokens = len(tokens)
-    if number_of_tokens >= 180:
-        tokens = tokens[:180]
+    if number_of_tokens >= 200:
+        tokens = tokens[:200]
         return ' '.join(tokens)
 
     return review
@@ -606,6 +606,7 @@ def extract_hotel(df):
             hotel = {
                 'hotel_id': int(hotel_id),
                 'hotel_name': row['hotel_name'],
+                'hotel_description': row['hotel_description'],
                 'average_score': row['hotel_score'],
                 'median_score': get_median_of_hotel_score(df, hotel_id),
                 'number_of_reviews': number_of_reviews,
