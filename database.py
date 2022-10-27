@@ -1,7 +1,7 @@
 import sqlite3
 
 # Change to database.db file for production
-conn = sqlite3.connect('hotel_murten_1.db')
+conn = sqlite3.connect('hotel_swiss.db')
 c = conn.cursor()
 
 
@@ -10,6 +10,7 @@ def create_hotels_table():
         c.execute("""CREATE TABLE IF NOT EXISTS hotels (
             hotel_id INTEGER PRIMARY KEY,
             hotel_name TEXT,
+            hotel_description TEXT,
             average_score REAL,
             median_score REAL,
             number_of_reviews INTEGER,
@@ -72,10 +73,11 @@ def create_reviewers_table():
 def insert_hotel(hotel: dict):
     with conn:
         c.execute(
-            """INSERT INTO hotels VALUES (:hotel_id, :hotel_name, :average_score, :median_score, :number_of_reviews,
+            """INSERT INTO hotels VALUES (:hotel_id, :hotel_name, :hotel_description, :average_score, :median_score, :number_of_reviews,
             :deviation, :max_review_one_day, :distortion, :good_rating_one_day, :bad_rating_one_day, :first_review)""",
             {'hotel_id': hotel['hotel_id'],
              'hotel_name': hotel['hotel_name'],
+             'hotel_description': hotel['hotel_description'],
              'average_score': hotel['average_score'],
              'median_score': hotel['median_score'],
              'number_of_reviews': hotel['number_of_reviews'],
